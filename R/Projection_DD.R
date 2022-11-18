@@ -14,7 +14,7 @@
 #' @param CE_df Cumulative effect dataframe. Data frame identifying cumulative effects stressors targets (system capacity or population parameter, or both, and target life stages.
 #' @importFrom rlang .data
 #'
-#'@returns A list object with projected years, population size, lambda, fecundity, survival, catastrophic events.
+#' @returns A list object with projected years, population size, lambda, fecundity, survival, catastrophic events.
 #'
 #' @export
 Projection_DD <- function(M.mx = NA,
@@ -108,134 +108,20 @@ Projection_DD <- function(M.mx = NA,
   # will be to fix this massive ifelse chain to make the framework more
   # flexible to other life history types ...
 
-  if (!is.null(CE_df)) {
-
-    CE_cap <- CE_df[CE_df$parameter == "capacity", ]
-    CE_surv <- CE_df[CE_df$parameter == "survival", ]
-
-
-    # Cumulative effects stressor is acting on survivorship vital rate
-    # apply stressors to survival for eggs, juveniles, adults, or all life stages
-
-    if (nrow(CE_surv) > 0)
-      {
-        ifelse(
-          CE_surv$life_stage == "egg",
-          dat$S["sE"] <-
-            dat$S["sE"] * CE_surv$sys.cap[CE_surv$life_stage == "egg"],
-          ifelse(
-            CE_surv$life_stage == "alevin",
-            dat$S[alevin_stage] <-
-              dat$S[alevin_stage] * CE_surv$sys.cap[CE_surv$life_stage == "alevin"],
-            ifelse(
-              CE_surv$life_stage == "all_juv",
-              dat$S[all_juv] <-
-                dat$S[all_juv] * CE_surv$sys.cap[CE_surv$life_stage == "all_juv"],
-              ifelse(
-                CE_surv$life_stage == "fry",
-                dat$S[fry_stages] <-
-                  dat$S[fry_stages] * CE_surv$sys.cap[CE_surv$life_stage == "fry"],
-                ifelse(
-                  CE_surv$life_stage == "fry_parr",
-                  dat$S[fry_parr_stages] <-
-                    dat$S[fry_parr_stages] * CE_surv$sys.cap[CE_surv$life_stage == "fry_parr"],
-                  ifelse(
-                    CE_surv$life_stage == "parr",
-                    dat$S[parr_stages] <-
-                      dat$S[parr_stages] * CE_surv$sys.cap[CE_surv$life_stage == "parr"],
-                    ifelse(
-                      CE_surv$life_stage == "sub_adult",
-                      dat$S[subadult_stages] <-
-                        dat$S[subadult_stages] * CE_surv$sys.cap[CE_surv$life_stage == "sub_adult"],
-                      ifelse(
-                        CE_surv$life_stage == "adult",
-                        dat$S[adult_stages] <-
-                          dat$S[adult_stages] * CE_surv$sys.cap[CE_surv$life_stage == "adult"],
-                        ifelse(
-                          CE_surv$life_stage == "all",
-                          dat$S <-
-                            dat$S * CE_surv$sys.cap[CE_surv$life_stage == "all"],
-                          dat$S <- dat$S
-                        )
-                      )
-                    )
-                  )
-                )
-              )
-            )
-          )
-        )
-    }
-
-
-    # Cumulative effects stressor is acting on carrying capacity
-    # apply stressors to carrying capacity for eggs, juveniles, adults, or all life stages
-
-    if (nrow(CE_cap) > 0)
-      {
-        ifelse(
-          CE_cap$life_stage == "egg",
-          dat$Ke <- dat$Ke * CE_cap$sys.cap[CE_cap$life_stage == "egg"],
-          ifelse(
-            CE_cap$life_stage == "alevin",
-            {
-              dat$K0 <- dat$K0 * CE_cap$sys.cap[CE_cap$life_stage == "alevin"]
-            },
-            ifelse(
-              CE_cap$life_stage == "all_juv",
-              {
-                dat$K[all_juv - 2] <-
-                  dat$K[all_juv - 2] * CE_cap$sys.cap[CE_cap$life_stage == "all_juv"]
-              },
-              ifelse(
-                CE_cap$life_stage == "fry",
-                {
-                  dat$K[fry_stages - 2] <-
-                    dat$K[fry_stages - 2] * CE_cap$sys.cap[CE_cap$life_stage == "fry"]
-                },
-                ifelse(
-                  CE_cap$life_stage == "fry_parr",
-                  {
-                    dat$K[fry_parr_stages - 2] <-
-                      dat$K[fry_parr_stages - 2] * CE_cap$sys.cap[CE_cap$life_stage == "fry_parr"]
-                  },
-                  ifelse(
-                    CE_cap$life_stage == "parr",
-                    {
-                      dat$K[parr_stages - 2] <-
-                        dat$K[parr_stages - 2] * CE_cap$sys.cap[CE_cap$life_stage == "parr"]
-                    },
-                    ifelse(
-                      CE_cap$life_stage == "sub_adult",
-                      dat$K[subadult_stages - 2] <-
-                        dat$K[subadult_stages - 2] * CE_cap$sys.cap[CE_cap$life_stage == "sub_adult"],
-                      ifelse(
-                        CE_cap$life_stage == "adult",
-                        dat$K[adult_stages - 2] <-
-                          dat$K[adult_stages - 2] * CE_cap$sys.cap[CE_cap$life_stage == "adult"],
-                        ifelse(CE_cap$life_stage ==
-                          "all",
-                        {
-                          dat$Ke <-
-                            dat$Ke * CE_cap$sys.cap[CE_cap$life_stage == "all"]
-                          dat$K0 <-
-                            dat$K0 * CE_cap$sys.cap[CE_cap$life_stage == "all"]
-                          dat$K <-
-                            dat$K * CE_cap$sys.cap[CE_cap$life_stage == "all"]
-                        },
-                        dat$K <- dat$K
-                        )
-                      )
-                    )
-                  )
-                )
-              )
-            )
-          )
-        )
-      }
+  # Apply CE stressors to population parameters
+  # if not null
+  if (!(is.null(CE_df))) {
+    dat <- pop_model_ce_apply(
+      CE_df = CE_df,
+      dat = dat,
+      alevin_stage = alevin_stage,
+      all_juv = all_juv,
+      fry_stages = fry_stages,
+      fry_parr_stages = fry_parr_stages,
+      parr_stages = parr_stages,
+      subadult_stages = subadult_stages,
+      adult_stages = adult_stages)
   }
-
 
 
   # YOY carrying capacity
@@ -306,16 +192,20 @@ Projection_DD <- function(M.mx = NA,
       # check if any survival rates > 1
       s.test <- d.vec * st[[t + 1]] # survival rate after DD effects
 
+
+      # MJB added to deal with NA bug
+      s.test <- ifelse(is.na(s.test), 0, s.test)
+
+
       if (any(s.test > 1)) {
-        # any s.test > 1?
-        s.err <- which(s.test > 1) # ID which is > 1
-        d.vec[s.err] <-
-          1 / st[[t + 1]][s.err] # set density depenence effect ot 1/surivval - give s = 1 after DD effects
+          # any s.test > 1?
+          s.err <- which(s.test > 1) # ID which is > 1
+          d.vec[s.err] <-
+            1 / st[[t + 1]][s.err] # set density depenence effect ot 1/surivval - give s = 1 after DD effects
       }
 
       # create density dependence effects matrix
       D <- pmx_eval(D.mx, as.list(d.vec))
-
     }
 
     # Population
@@ -344,7 +234,6 @@ Projection_DD <- function(M.mx = NA,
 
     # pop growth rate
     lambdas[t] <- Nvec[t + 1] / Nvec[t]
-
   }
 
   # Build return object from function
@@ -357,5 +246,4 @@ Projection_DD <- function(M.mx = NA,
   )
 
   return(ret_obj)
-
 }
